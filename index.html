@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基建工作看板</title>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          integrity="sha512-p4XKc4M4KbkXjMjnFqNwZK2gT0ZsRrV4qP5l/1VQ8p2wO7+uLz8bXk2cV4Ue8lVtL5h5d5f5Bsj5f5N8K6N2w=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"/>
+    <style>
+        :root{
+            --primary:#1a4f72;
+            --secondary:#3498db;
+            --accent:#e74c3c;
+            --light:#f5f7fa;
+            --dark:#2c3e50;
+            --success:#27ae60;
+            --shadow:0 4px 6px rgba(0,0,0,.1);
+            --transition:all .3s ease;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Arial,sans-serif;}
+        body{background:#f0f3f5;color:#333;line-height:1.6;}
+
+         .main-content ul {
+            padding-left: 4em; /* 核心：正文列表小圆点后退4个英文字符（1em≈1个英文字符宽度） */
+            margin: 10px 0; /* 可选：优化列表上下间距，避免与前后内容拥挤（可根据需求调整） */
+            list-style-position: outside; /* 确保小圆点在列表内容左侧，不与文字重叠 */
+        }
+
+
+
+        /* -------------------- 侧边栏 -------------------- */
+        .sidebar{
+            position:fixed; left:0; top:0;
+            width:260px; height:100vh;
+            background:var(--primary);
+            color:#fff;
+            display:flex;
+            flex-direction:column;
+            box-shadow:var(--shadow);
+        }
+        .sidebar-header{
+            padding:20px 0;
+            border-bottom:1px solid rgba(255,255,255,.1);
+            text-align:center;
+            
+        }
+        .sidebar-header h2{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            font-weight:600;
+            font-size:1.3rem;
+            color:#fff;
+        }
+        .sidebar-header h2 i{color:var(--secondary);}
+        .nav-wrapper{flex:1;overflow-y:auto;}
+        .nav-links{list-style:none;margin-top:20px;padding-left:0;}
+        .nav-links li{padding:3px 30px;transition:var(--transition);}
+        .nav-links li:hover{background:rgba(255,255,255,.1);border-left:4px solid var(--secondary);}
+        .nav-links a{color:#fff;text-decoration:none;display:flex;align-items:center;gap:15px;font-weight:500;}
+        .nav-links i{width:20px;text-align:center;}
+        .sub-nav{list-style:none;margin-top:5px;margin-left:40px;}
+        .sub-nav li{padding:3px 0;}
+        .sub-nav a{font-size:.95rem;color:#e0e0e0;gap:10px;}
+
+        /* -------------------- 主内容 -------------------- */
+        .main-content{margin-left:260px;padding:20px;}
+        .header{
+            position:relative;            /* 让 button 能绝对定位 */
+            padding-right:150px;          /* 为右侧按钮预留空间，防止遮挡 */
+            margin-bottom:20px;
+        }
+        .title-block{
+            text-align:center;
+        }
+        .title-block h1{
+            color:var(--primary);
+            font-weight:700;
+            margin:0;
+        }
+        .title-block .info{
+            color:#555;
+            font-size:0.95rem;
+            margin-top:4px;
+        }
+        
+        .download-btn:hover{background:#219653;transform:translateY(-2px);}
+        .report-content{background:#fff;border-radius:10px;padding:30px;box-shadow:var(--shadow);}
+        .section{margin-bottom:40px;}
+        .section-title{color:var(--primary);border-bottom:2px solid var(--secondary);padding-bottom:10px;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+        .section-content{line-height:1.8;}
+        table{width:100%;border-collapse:collapse;margin:20px 0;}
+        th,td{padding:12px 15px;text-align:left;border-bottom:1px solid #ddd;}
+        th{background:var(--primary);color:#fff;}
+        tr:hover{background:#f9f9f9;}
+
+        /* 报告发布时间容器，使用 flex 让内容靠右 */
+        .info{
+            display:flex;
+            justify-content:flex-end;   /* 直接推到最右边 */
+            align-items:center;
+            margin-top:4px;             /* 与标题保持一点间距，可自行调 */
+        }
+
+        /* -------------------- 登录弹框 -------------------- */
+        .login-container{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(23,43,63,.95);display:flex;justify-content:center;align-items:center;z-index:2000;}
+        .login-form{background:#fff;padding:40px;border-radius:10px;width:90%;max-width:450px;box-shadow:0 10px 30px rgba(0,0,0,.3);}
+        .login-form h2{color:var(--primary);text-align:center;margin-bottom:30px;}
+        .form-group{margin-bottom:25px;}
+        .form-group label{display:block;margin-bottom:8px;font-weight:600;color:var(--dark);}
+        .form-group input{width:100%;padding:15px;border:1px solid #ddd;border-radius:5px;font-size:16px;}
+        .login-btn{width:100%;padding:15px;background:var(--primary);color:#fff;border:none;border-radius:5px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition);}
+        .login-btn:hover{background:#0e3a5a;}
+        .error-message{color:var(--accent);text-align:center;margin-top:15px;font-weight:500;display:none;}
+
+        @media(max-width:992px){
+            .sidebar{position:static;width:100%;height:auto;}
+            .main-content{margin-left:0;}
+            .header{padding-right:0;}
+            .download-btn{position:static;margin-top:15px;}
+        }
+        @media(max-width:576px){
+            .title-block h1{font-size:1.5rem;}
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录框 -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-form">
+            <h2><i class="fas fa-lock"></i> 受限访问，请输入密码</h2>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" placeholder="请输入访问密码">
+            </div>
+            <button class="login-btn" id="loginBtn">登录</button>
+            <p class="error-message" id="errorMessage">密码错误，请重试</p>
+        </div>
+    </div>
+
+    <!-- -------------------- 侧边导航（标题 “目  录”) -------------------- -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2> 目  录</h2>
+        </div>
+        <div class="nav-wrapper">
+            <ul class="nav-links">
+                <li><a href="#indicators"> 一、年度指标完成情况</a></li>
+                <li><a href="#plan"> 二、9月工作计划</a></li>
+                <ul class="sub-nav">
+                    <li><a href="#plan-lr"> （一）利润计划</a></li>
+                    <li><a href="#plan-zj"> （二）资金计划</a></li>
+                    <li><a href="#plan-gz"> （三）月度重点工作</a></li>
+                </ul>
+                <li><a href="#traditional"> 三、传统基建业务明细</a></li>
+                <ul class="sub-nav">
+                    <li><a href="#project-mul"> （一）中电神火木垒项目</a></li>
+                    <li><a href="#project-chenxi"> （二）辰溪风电项目</a></li>
+                    <li><a href="#project-pu"> （三）普安晴隆光伏项目</a></li>
+                </ul>
+                <li><a href="#logistics"> 四、物流运输</a></li>
+                <ul class="sub-nav">
+                    <li><a href="#project-pu"> （一）普安晴隆光伏项目组件运输</a></li>
+                </ul>
+                <li><a href="#tech-improve"> 五、技改项目</a></li><ul class="sub-nav">
+                   
+                    <li><a href="#project-pu"> （一）普安厂内光伏项目</a></li>
+                </ul>
+                <li><a href="#weekly-schedule"> 六、本周工作安排</a></li>
+                <li><a href="#leadership"> 七、需要领导解决的问题</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- -------------------- 主内容 -------------------- -->
+    <main class="main-content">
+        <div class="header">
+            <!-- 居中标题 -->
+            <div class="title-block">
+                <h1>基建工作看板</h1>
+                <!-- 这里加入了 <span id="publishDate"> 的占位 -->
+                <div class="info">  
+                    报告发布日：<span id="publishDate">2025年9月9日</span>
+                </div>
+            </div>
+          
+        </div>
+
+        <div class="report-content">
+            <!-- 1. 一、年度指标完成情况 -->
+            <section class="section" id="indicators">
+                <h2 class="section-title"><i class="fas fa-chart-pie"></i> 一、2025年度指标完成情况（截止发布日）</h2>
+                <div class="section-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>指标名称</th><th>指标值（万元）</th><th>已完成（万元）</th><th>完成比例（%）</th><th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>传统基建毛利</td><td>1820</td><td>618.59</td><td>33.99</td><td></td></tr>
+                            <tr><td>物流运输</td><td>100</td><td>0</td><td>0</td><td></td></tr>
+                            <tr><td>技改项目</td><td>0突破</td><td>0</td><td>0</td><td></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 2. 二、9月工作计划 -->
+            <section class="section" id="plan">
+                <h2 class="section-title"><i class="fas fa-calendar-check"></i>二、9月工作计划</h2>
+                <div class="section-content">
+                    <p><strong id="plan-lr">（一）利润计划（万元）共 313</strong></p>
+                    <ul>
+                        <li>木垒风电—主机：153  </li>
+                           <ul><span style="color:#f76a05;font-weight:bold;font-size:1rem">P.S.</span> 9月15日，提交结利154.95万元</ul>
+                        <li>木垒风电—辅材：25</li>
+                        <li>辰溪风电：60</li>
+                        <li>普安晴隆猫猫井：75</li>
+                        <li>普安晴隆碧痕：0</li>
+                        <li>普安新店：0</li>
+                           <ul><span style="color:#f76a05;font-weight:bold;font-size:1rem">P.S.</span> 9月15日，提交结利0.64万元</ul>
+                        
+                    </ul>
+
+                    <p><strong id="plan-zj">（二）资金计划（万元）</strong></p>
+                    <ul>
+                        <li>收款合计：77 344.84<br>
+                            1.1 木垒风电：66 557.15（垫付款 51 600 + 代采辅材款 7 000 + 11 台主机到货款 7 957.15）<br>
+                            <ul><span style="color:#f76a05;font-weight:bold;font-size:1rem">P.S.</span> 9月15日，收款￥57,118,153.4元；9月16日，收款￥342,881,415.00元</ul>
+                            1.2 辰溪风电：2 261.12<br>
+                            1.3 普安晴隆：8 526.57
+                        </li>
+                        <li>付款合计：27 301.12<br>
+                            2.1 木垒风电：14 870.57（代采辅材款 7 000 + 11 台主机到货款 7 870.57）<br>
+                            2.2 辰溪风电：2 227.71<br>
+                            2.3 普安晴隆：7 202.84
+                        </li>
+                    </ul>
+
+                    <p><strong id="plan-gz">（三）月度重点工作</strong></p>
+                    <ul>
+                        <li>木垒项目预付款回款跟踪、到货跟踪、到货款结算策划</li>
+                        <li>普安晴隆预收/预付款跟踪、到货协调、到货款结算策划</li>
+                        <li>普安晴隆碧痕组件合同签订、运输实施</li>
+                        <li>高密100MW风电项目总包合同签订</li>
+                           <ul><span style="color:#f76a05;font-weight:bold;font-size:1rem">P.S.</span> 传闻运达拟弃标</ul>
+                        <li>昔阳50MW风电项目初步对接</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 3. 三、传统基建业务明细 -->
+            <section class="section" id="traditional">
+                <h2 class="section-title"><i class="fas fa-clipboard-list"></i> 三、传统基建业务明细（不含可克达拉和呼图壁项目）</h2>
+
+                <!-- （一）中电神火木垒项目 -->
+                <section class="subsection" id="project-mul">
+                    <h3 class="section-title"><i class="fas fa-industry"></i> （一）中电神火木垒自备绿电替代风电项目</h3>
+                    <p><strong>1. 合同情况</strong></p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>合同编号</th><th>合同名称</th><th>合同金额（¥）</th><th>结算比例（%）</th><th>到期应收/付款（元）</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>109116WZ0120250050</td><td>采购——中电神火木垒自备绿电替代风电项目采购合同</td><td>1 276 203 124.00</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116WZ0320250026</td><td>销售——中电神火木垒自备绿电替代风电项目采购合同</td><td>1 290 398 921.00</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250023</td><td>采购——中电国瑞中电神火木垒站用变、接地变采购合同</td><td>893 800.00</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250024</td><td>销售——中电国瑞中电神火木垒站用变、接地变销售合同</td><td>896 700.00</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250019</td><td>采购——中电神火木垒直流系统及UPS系统采购合同</td><td>522 000.00</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250020</td><td>销售——中电神火木垒直流系统及UPS系统采购合同</td><td>523 769.00</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250018</td><td>销售——中电神火木垒自备绿电替代风电项目SVG设备销售合同</td><td>5 045 158.12</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250008</td><td>销售——中电神火木垒自备绿电替代风电项目电缆销售合同</td><td>59 884 725.00</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250016</td><td>销售——中电神火木垒自备绿电替代风电项目低压开关柜销售合同</td><td>544 120.37</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250017</td><td>销售——中电神火木垒自备绿电替代风电项目35kV开关柜销售合同</td><td>7 036 738.64</td><td>0</td><td>0</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>2. 供货计划及执行情况</strong></p>
+                    <ul>
+                        <li><strong>2.1 风力发电机组供货计划及执行情况</strong>：
+                            <ul> <img src="./images/001.png" ></ul>
+                            <ul>截至9月16日，风机到货：塔筒：14套；叶片：20套；机舱：29套；传动链：23套；轮毂：29套。</ul></li></li>
+                        <li><strong>2.2 其他代采物资供货情况（截至 9 月 16 日）</strong>S
+                            <ul>
+                                <li>电缆：ZC-YJY63-0.6/1-1×185，到货：5040米；ZC-YJY23-1.8/3-3×300，到货：40500米；ZC-YJLHY23-26/35-3×120，到货：10381米；电缆：ZC-YJLHY23-26/35-3×240，到货：2168米。其他电缆均已生产完成待付款后发货。</li>
+                                <li>低压开关柜全部到货。</li>
+                                <li>35kV开关柜（48面）到货。</li>
+                                <li>SVG、UPS及直流系统已发货。</li>
+                                <li>接地变、站用变待预付款付清后发货。</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <p><strong>3. 结算异常情况</strong>：无。</p>
+
+                    <p><strong>4. 资金相关</strong></p>
+                    <ul>
+                        <li>4.1 资金垫付情况：合同号 109116WZ0120250050 垫付预付款+投料款共 <span style="color:#f10c0c;font-weight:bold">¥510 481 249.60，</span>计划 9 月 12 日回款。</li>
+                        <ul><span style="color:#f76a05;font-weight:bold;font-size:1rem">P.S.</span> 9月15日，收款￥57,118,153.4元；9月16日，收款￥342,881,415.00元</ul>
+                       
+                        <li>4.2 货款回收异常：无。</li>
+                    </ul>
+                </section>
+
+                <!-- （二）辰溪风电项目（完整合同） -->
+                <section class="subsection" id="project-chenxi">
+                    <h3 class="section-title"><i class="fas fa-industry"></i> （二）辰溪风电项目</h3>
+                    <p><strong>1. 合同情况</strong></p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>合同编号</th><th>合同名称</th><th>合同金额（¥）</th><th>结算比例（%）</th><th>到期应收/付款（元）</th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>109116JJ0920240024/030</td><td>采购——辰溪后塘 50MW 风电项目采购合同及补充协议（一）</td><td>98 309 410.00</td><td>45.32</td><td>0</td></tr>
+                            <tr><td>109116JJ0920240025/031</td><td>销售——辰溪后塘 50MW 风电项目采购合同及补充协议（一）</td><td>99 784 065.00</td><td>45.32</td><td>0</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>2. 供货计划及执行情况</strong>：截至 9 月 16 日，到货 8 套（全部），已安装 7 套，预计本周全部安装完成。</p>
+                    <p><strong>3. 结算异常情况</strong>：无。</p>
+                    <p><strong>4. 资金相关</strong></p>
+                    <ul>
+                        <li>4.1 资金垫付情况：无。</li>
+                        <li>4.2 货款回收异常：无。</li>
+                    </ul>
+                    <p><strong>5. 其他需要说明的问题</strong>：辰溪风电项目现归属五凌电力，属表外项目，回款逾期风险增大。现场已到货 8 套，逾期风险小，不再考虑任何形式的垫资。</p>
+                    
+                </section>
+
+                <!-- （三）普安晴隆光伏项目 -->
+                <section class="subsection" id="project-pu">
+                    <h3 class="section-title"><i class="fas fa-industry"></i> （三）普安晴隆光伏项目</h3>
+                    <p><strong>1. 合同情况</strong></p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>合同编号</th><th>合同名称</th><th>合同金额（¥）</th><th>结算比例（%）</th><th>到期应收/付款（元）</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>109116JJ0920250025</td><td>采购——华耀——晴隆县光照猫猫井光伏电站项目 N型 585Wp 组件购销合同</td><td>137 817 164.16</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250026</td><td>销售——普安——晴隆县光照猫猫井光伏电站项目 N型 585Wp 组件购销合同</td><td>141 530 800.32</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250027</td><td>采购——华耀——晴隆县碧痕新坪村光伏电站项目 N型 585Wp 组件购销合同</td><td>138 944 173.68</td><td>0</td><td>0</td></tr>
+                            <tr><td>109116JJ0920250028</td><td>销售——普安——晴隆县碧痕新坪村光伏电站项目 N型 585Wp 组件购销合同</td><td>142 688 178.36</td><td>0</td><td>0</td></tr>
+                        </tbody>
+                    </table>
+
+                    <p><strong>2. 供货计划及执行情况</strong>：至 9 月 16 日，猫猫井项目已到货 52 MWp，在途 20 MWp；碧痕项目发货 0，已到货 0。</p>
+                    <p><strong>3. 结算异常情况</strong>：无。</p>
+                    <p><strong>4. 资金相关</strong></p>
+                    <ul>
+                        <li>4.1 资金垫付情况：《采购——华耀——晴隆县光照猫猫井光伏电站项目 N型 585Wp 组件购销合同》（合同号 109116JJ0920250025）垫付预付款 ¥11 000 000.00，计划 9 月 15 日回款。</li>
+                        <ul><span style="color:#f76a05;font-weight:bold;font-size:1rem">P.S.</span> 因业主方项目贷进度滞后，计划9月23日，回款</ul>
+                        <li>4.2 货款回收异常：无。</li>
+                    </ul>
+                    <p><strong>5. 其他需要说明的问题</strong>：无。</p>
+                </section>
+            </section>
+
+            <!-- 4. 四、物流运输 -->
+            <section class="section" id="logistics">
+                <h2 class="section-title"><i class="fas fa-truck"></i> 四、物流运输</h2>
+                <p><strong>（一）普安晴隆光伏项目组件运输</strong></p>
+                <ul>
+                    <li>1. 合同情况：暂无</li>
+                    <li>2. 供货计划及执行情况：无</li>
+                    <li>3. 结算异常情况：无</li>
+                    <li>4. 资金相关
+                        <ul>
+                            <li>4.1 资金垫付情况：无</li>
+                            <li>4.2 货款回收异常：无</li>
+                        </ul>
+                    </li>
+                    <li>5. 其他需要说明的问题：无</li>
+                </ul>
+            </section>
+
+            <!-- 5. 五、技改项目 -->
+            <section class="section" id="tech-improve">
+                <h2 class="section-title"><i class="fas fa-tools"></i> 五、技改项目</h2>
+                <p>暂无，需要系统梳理切入点，重新配置资源。</p>
+            </section>
+
+            <!-- 6. 六、本周工作安排 -->
+            <section class="section" id="weekly-schedule">
+                <h2 class="section-title"><i class="fas fa-calendar-week"></i> 六、本周工作安排</h2>
+
+                <p><strong>（一）利润计划</strong></p>
+                <ul>
+                    <li>辰溪风电结算 4 台套</li>
+                    <li>木垒项目风机结算 40 台套</li>
+                    <li>普安猫猫井光伏结算 50MW </li>
+                </ul>
+
+                <p><strong>（二）资金收支</strong></p>
+                <ul>
+                    <li>收：木垒项目垫付风机 10% 预付款 + 30% 投料款</li>
+                    <li>收：普安晴隆光伏项目 10% 预付款 + 20% 投料款</li>
+                    <li>付：木垒项目代采辅材成套款</li>
+                    <li>付：湖北麻城光伏项目应付晶科质保金</li>
+                </ul>
+
+                <p><strong>（三）合同执行</strong></p>
+                <ul>
+                    <li>辰溪项目风电主机全部 8 台套安装就位</li>
+                    <li>木垒项目主机到货至 51 台套</li>
+                    <li>木垒项目电缆接续供货</li>
+                    <li>普安晴隆猫猫井正常发货、碧痕开始送货（本周控制在 3MW 以下）</li>
+                    <li>普安晴隆光伏项目组件运输合同签订，开始发运（视天气）</li>
+                </ul>
+
+                <p><strong>（四）新项目推进</strong></p>
+                <ul>
+                    <li>普安厂内光伏技改项目前期。</li>
+                    <li>山西昔阳风电项目跟踪。</li>
+                    <li>普安晴隆大厂项目组件改型跟踪。大厂项目预计 2026 年实施，基于技术迭代的要求，应尽量促成。</li>
+                </ul>
+            </section>
+
+            <!-- 7. 七、需要领导解决的问题 -->
+            <section class="section" id="leadership">
+                <h2 class="section-title"><i class="fas fa-question-circle"></i> 七、需要领导解决的问题</h2>
+                <ul>
+                    <li>普安晴隆光伏项目华耀预付款不能早于 9 月 20 日支付</li>
+                    
+                </ul>
+            </section>
+        </div>
+    </main>
+
+    <!-- -------------------- 脚本 -------------------- -->
+    <script>
+        /* ---------- 登录校验 ---------- */
+        document.addEventListener('DOMContentLoaded', () => {
+            const correctPassword = "ZDGR9527";
+            const loginContainer = document.getElementById('loginContainer');
+            const loginBtn = document.getElementById('loginBtn');
+            const pwInput = document.getElementById('password');
+            const errMsg = document.getElementById('errorMessage');
+
+            if (sessionStorage.getItem('authenticated') === 'true') {
+                loginContainer.style.display = 'none';
+            }
+
+            const tryLogin = () => {
+                if (pwInput.value.trim() === correctPassword) {
+                    sessionStorage.setItem('authenticated', 'true');
+                    loginContainer.style.display = 'none';
+                } else {
+                    errMsg.style.display = 'block';
+                    setTimeout(() => errMsg.style.display = 'none', 3000);
+                }
+            };
+            loginBtn.addEventListener('click', tryLogin);
+            pwInput.addEventListener('keypress', e => { if (e.key === 'Enter') tryLogin(); });
+
+            /* ---------- 下载完整报告 ---------- */
+            
+            /* ---------- 平滑滚动 ---------- */
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', e => {
+                    e.preventDefault();
+                    const target = document.querySelector(link.getAttribute('href'));
+                    if (target) {
+                        const top = target.offsetTop - 20;
+                        window.scrollTo({ top, behavior: 'smooth' });
+                    }
+                });
+            });
+             /* ---------- 动态报告发布日 ----------
+               1) 格式化为 中文日期
+               2) 从网络时间 API 获取（推荐）或直接使用本机时间
+            */
+            function formatChineseDate(date){
+                const y = date.getFullYear();
+                const m = date.getMonth() + 1;
+                const d = date.getDate();
+                return `${y}年${m}月${d}日`;
+            }
+            async function setPublishDateFromAPI(){
+                try{
+                    const resp = await fetch('https://worldtimeapi.org/api/ip');
+                    if(!resp.ok) throw new Error('Network error');
+                    const data = await resp.json();
+                    const dt = new Date(data.datetime);
+                    document.getElementById('publishDate').innerText = formatChineseDate(dt);
+                }catch(e){
+                    console.warn('获取网络时间失败，使用本机时间。', e);
+                    const now = new Date();
+                    document.getElementById('publishDate').innerText = formatChineseDate(now);
+                }
+            }
+            // 如仅想用本机时间，可改为 setPublishDateLocal();
+            setPublishDateFromAPI();   // <-- 这里是关键
+        });
+    </script>
+</body>
+</html>
